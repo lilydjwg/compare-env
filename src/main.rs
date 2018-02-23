@@ -22,17 +22,16 @@ enum EnvVal {
   Fail,
 }
 
-fn get_envval(path: PathBuf, name: &str) -> Result<Option<String>> {
-  let p = path.join("environ");
+fn get_envval(mut path: PathBuf, name: &str) -> Result<Option<String>> {
+  path.push("environ");
   let mut buffer = vec![];
-  let mut f = fs::File::open(&p)?;
+  let mut f = fs::File::open(&path)?;
   f.read_to_end(&mut buffer)?;
   let r = buffer.split(|c| *c == 0)
     .find(|v| v.starts_with(name.as_bytes()))
     .and_then(|v| {
-      v.splitn(2, |c| *c == '=' as u8)
-        .skip(1)
-        .next()
+      v.splitn(2, |c| *c == b'=')
+        .nth(1)
         .map(|s| String::from_utf8_lossy(s).into_owned())
     });
   Ok(r)
@@ -42,8 +41,8 @@ main!(|args: Cli, log_level: verbosity| {
   let result: Vec<(EnvVal, u32)> = fs::read_dir("/proc")?
     .collect::<Vec<_>>()
     .par_iter().filter_map(|entry| {
-      match entry {
-        &Ok(ref entry) => {
+      match *entry {
+        Ok(ref entry) => {
           let path = entry.path();
           if let Ok(pid) = path.file_name().unwrap().to_str().unwrap().parse() {
             Some((path, pid))
@@ -51,7 +50,7 @@ main!(|args: Cli, log_level: verbosity| {
             None
           }
         },
-        &Err(_) => None,
+        Err(_) => None,
       }
     }).map(|(path, pid)| {
       let v = get_envval(path, &args.envvar);
