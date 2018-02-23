@@ -38,6 +38,7 @@ fn get_envval(mut path: PathBuf, name: &str) -> Result<Option<String>> {
 }
 
 main!(|args: Cli, log_level: verbosity| {
+  let name_prefix = args.envvar + "=";
   let result: Vec<(EnvVal, u32)> = fs::read_dir("/proc")?
     .collect::<Vec<_>>()
     .par_iter().filter_map(|entry| {
@@ -53,7 +54,7 @@ main!(|args: Cli, log_level: verbosity| {
         Err(_) => None,
       }
     }).map(|(path, pid)| {
-      let v = get_envval(path, &args.envvar);
+      let v = get_envval(path, &name_prefix);
       let v = match v {
         Ok(Some(s)) => EnvVal::Value(s),
         Ok(None) => EnvVal::Nothing,
