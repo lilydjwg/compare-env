@@ -2,6 +2,7 @@
 name = "compare-env"
 version = "0.1.0"
 authors = ["lilydjwg <lilydjwg@gmail.com>"]
+license = "MIT"
 
 [dependencies]
 quicli = "*"
