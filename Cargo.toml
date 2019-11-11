@@ -1,8 +1,9 @@
 [package]
 name = "compare-env"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["lilydjwg <lilydjwg@gmail.com>"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 quicli = "*"

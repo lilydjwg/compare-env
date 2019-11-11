@@ -1,6 +1,3 @@
-extern crate quicli;
-extern crate structopt;
-
 use std::fs;
 use std::io::{Read, Result as IoResult};
 use std::path::PathBuf;
