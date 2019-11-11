@@ -6,6 +6,7 @@ license = "MIT"
 
 [dependencies]
 quicli = "*"
+structopt = "*"
 
 [profile.release]
 lto = true

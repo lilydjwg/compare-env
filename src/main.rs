@@ -1,10 +1,12 @@
-#[macro_use] extern crate quicli;
+extern crate quicli;
+extern crate structopt;
 
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Result as IoResult};
 use std::path::PathBuf;
 use std::collections::HashMap;
 
+use structopt::StructOpt;
 use quicli::prelude::*;
 
 #[derive(Debug, StructOpt)]
@@ -22,7 +24,7 @@ enum EnvVal {
   Fail,
 }
 
-fn get_envval(mut path: PathBuf, name: &str) -> Result<Option<String>> {
+fn get_envval(mut path: PathBuf, name: &str) -> IoResult<Option<String>> {
   path.push("environ");
   let mut buffer = vec![];
   let mut f = fs::File::open(&path)?;
@@ -37,7 +39,8 @@ fn get_envval(mut path: PathBuf, name: &str) -> Result<Option<String>> {
   Ok(r)
 }
 
-main!(|args: Cli, log_level: verbosity| {
+fn main() -> CliResult {
+  let args = Cli::from_args();
   let name_prefix = args.envvar + "=";
   let result: Vec<(EnvVal, u32)> = fs::read_dir("/proc")?
     .collect::<Vec<_>>()
@@ -74,4 +77,6 @@ main!(|args: Cli, log_level: verbosity| {
   for (v, pids) in r {
     println!("{:5} {:?} ({:?})", pids.len(), v, pids);
   }
-});
+
+  Ok(())
+}
