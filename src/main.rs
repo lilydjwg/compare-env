@@ -4,12 +4,9 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 
 use structopt::StructOpt;
-use quicli::prelude::*;
 
 #[derive(Debug, StructOpt)]
 struct Cli {
-  #[structopt(flatten)]
-  verbosity: Verbosity,
   #[structopt(help="envvar name")]
   envvar: String,
 }
@@ -36,22 +33,20 @@ fn get_envval(mut path: PathBuf, name: &str) -> IoResult<Option<String>> {
   Ok(r)
 }
 
-fn main() -> CliResult {
+fn main() -> IoResult<()> {
   let args = Cli::from_args();
   let name_prefix = args.envvar + "=";
   let result: Vec<(EnvVal, u32)> = fs::read_dir("/proc")?
-    .collect::<Vec<_>>()
-    .par_iter().filter_map(|entry| {
-      match *entry {
-        Ok(ref entry) => {
-          let path = entry.path();
-          if let Ok(pid) = path.file_name().unwrap().to_str().unwrap().parse() {
-            Some((path, pid))
-          } else {
-            None
-          }
-        },
-        Err(_) => None,
+    .filter_map(|entry| {
+      if let Ok(entry) = entry {
+        let path = entry.path();
+        if let Ok(pid) = path.file_name().unwrap().to_str().unwrap().parse() {
+          Some((path, pid))
+        } else {
+          None
+        }
+      } else {
+        None
       }
     }).map(|(path, pid)| {
       let v = get_envval(path, &name_prefix);
@@ -65,7 +60,7 @@ fn main() -> CliResult {
 
   let mut map = HashMap::new();
   for (v, pid) in result {
-    map.entry(v).or_insert_with(|| vec![]).push(pid);
+    map.entry(v).or_insert_with(Vec::new).push(pid);
   }
 
   let mut r = map.into_iter().collect::<Vec<(EnvVal, Vec<u32>)>>();

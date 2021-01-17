@@ -6,7 +6,6 @@ license = "MIT"
 edition = "2018"
 
 [dependencies]
-quicli = "*"
 structopt = "*"
 
 [profile.release]
