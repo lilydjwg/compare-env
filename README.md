@@ -3,7 +3,7 @@ Compare the given environment variable value across all the processes.
 To install, install Rust first then run:
 
 ```
-cargo install
+cargo install --path .
 ```
 
 You'll get a binary called `compare-env` in `~/.cargo/bin` (you should add this to your `$PATH`).
