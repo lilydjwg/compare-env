@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::{Read, Result as IoResult};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 
 use structopt::StructOpt;
@@ -9,14 +9,18 @@ use structopt::StructOpt;
 struct Cli {
   #[structopt(help="envvar name")]
   envvar: String,
+  #[structopt(short="c", long="cmd", help="show command line")]
+  show_cmd: bool,
 }
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Eq, PartialEq, Hash, Debug, PartialOrd, Ord, Clone)]
 enum EnvVal {
-  Value(String),
-  Nothing,
   Fail,
+  Nothing,
+  Value(String),
 }
+
+type Results = Vec<(EnvVal, u32, Option<String>)>;
 
 fn get_envval(mut path: PathBuf, name: &str) -> IoResult<Option<String>> {
   path.push("environ");
@@ -33,10 +37,35 @@ fn get_envval(mut path: PathBuf, name: &str) -> IoResult<Option<String>> {
   Ok(r)
 }
 
+fn get_cmdline(p: &Path) -> String {
+  let cmdline_path = p.join("cmdline");
+  let mut buf = String::new();
+  let mut file = match fs::File::open(&cmdline_path) {
+    Ok(f) => f,
+    Err(_) => return String::new(),
+  };
+  match file.read_to_string(&mut buf) {
+    Ok(_) => (),
+    Err(_) => return String::new(),
+  };
+  chop_null(buf)
+}
+
+fn chop_null(mut s: String) -> String {
+  if s.is_empty() {
+    return s;
+  }
+  let last = s.len() - 1;
+  if !s.is_empty() && s.as_bytes()[last] == 0 {
+    s.truncate(last);
+  }
+  s.replace('\0', " ")
+}
+
 fn main() -> IoResult<()> {
   let args = Cli::from_args();
   let name_prefix = args.envvar + "=";
-  let result: Vec<(EnvVal, u32)> = fs::read_dir("/proc")?
+  let results: Results = fs::read_dir("/proc")?
     .filter_map(|entry| {
       if let Ok(entry) = entry {
         let path = entry.path();
@@ -49,17 +78,28 @@ fn main() -> IoResult<()> {
         None
       }
     }).map(|(path, pid)| {
+      let cmd = args.show_cmd.then(|| get_cmdline(&path));
       let v = get_envval(path, &name_prefix);
       let v = match v {
         Ok(Some(s)) => EnvVal::Value(s),
         Ok(None) => EnvVal::Nothing,
         Err(_) => EnvVal::Fail,
       };
-      (v, pid)
+      (v, pid, cmd)
     }).collect();
 
+  if args.show_cmd {
+    show_results_long(results);
+  } else {
+    show_results_short(results);
+  }
+
+  Ok(())
+}
+
+fn show_results_short(results: Results) {
   let mut map = HashMap::new();
-  for (v, pid) in result {
+  for (v, pid, _) in results {
     map.entry(v).or_insert_with(Vec::new).push(pid);
   }
 
@@ -69,6 +109,23 @@ fn main() -> IoResult<()> {
   for (v, pids) in r {
     println!("{:5} {:?} ({:?})", pids.len(), v, pids);
   }
+}
 
-  Ok(())
+fn show_results_long(mut results: Results) {
+  results.sort_by_cached_key(|(env, pid, _)| (env.clone(), *pid));
+
+  for (v, pid, cmdline) in results {
+    println!("{:7} {:20} {}", pid, v, cmdline.unwrap());
+  }
+}
+
+use std::fmt::{Display, Formatter, Error};
+impl Display for EnvVal {
+  fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+    match self {
+      Self::Nothing => f.pad("Nothing"),
+      Self::Fail => f.pad("Fail"),
+      Self::Value(v) => f.pad(&format!("\"{}\"", v)),
+    }
+  }
 }

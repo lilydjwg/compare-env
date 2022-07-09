@@ -1,9 +1,9 @@
 [package]
 name = "compare-env"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["lilydjwg <lilydjwg@gmail.com>"]
 license = "MIT"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 structopt = "*"
