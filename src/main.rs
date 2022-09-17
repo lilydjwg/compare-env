@@ -3,13 +3,14 @@ use std::io::{Read, Result as IoResult};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 
-use structopt::StructOpt;
+use clap::Parser;
 
-#[derive(Debug, StructOpt)]
+#[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
 struct Cli {
-  #[structopt(help="envvar name")]
+  #[clap(help="envvar name")]
   envvar: String,
-  #[structopt(short="c", long="cmd", help="show command line")]
+  #[clap(short='c', long="cmd", help="show command line")]
   show_cmd: bool,
 }
 
