@@ -64,7 +64,7 @@ fn chop_null(mut s: String) -> String {
 }
 
 fn main() -> IoResult<()> {
-  let args = Cli::from_args();
+  let args = Cli::parse();
   let name_prefix = args.envvar + "=";
   let results: Results = fs::read_dir("/proc")?
     .filter_map(|entry| {
