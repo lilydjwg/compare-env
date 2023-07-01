@@ -105,7 +105,7 @@ fn show_results_short(results: Results) {
   }
 
   let mut r = map.into_iter().collect::<Vec<(EnvVal, Vec<u32>)>>();
-  r.sort_unstable_by_key(|&(_, ref pids)| pids.len());
+  r.sort_unstable_by_key(|(_, pids)| pids.len());
 
   for (v, pids) in r {
     println!("{:5} {:?} ({:?})", pids.len(), v, pids);
