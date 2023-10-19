@@ -41,7 +41,7 @@ fn get_envval(mut path: PathBuf, name: &str) -> IoResult<Option<String>> {
 fn get_cmdline(p: &Path) -> String {
   let cmdline_path = p.join("cmdline");
   let mut buf = String::new();
-  let mut file = match fs::File::open(&cmdline_path) {
+  let mut file = match fs::File::open(cmdline_path) {
     Ok(f) => f,
     Err(_) => return String::new(),
   };
